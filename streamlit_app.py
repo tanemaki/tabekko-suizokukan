@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import cv2
+import pandas as pd
 
 from tabekko.preprocessor import ImagePreProcessor
 
@@ -85,6 +86,21 @@ def render_page():
     edge_length = 28
 
     image_preprocessor = ImagePreProcessor(image, edge_length)
+
+    tabekko_df = pd.read_csv(
+        "data/ginbis_tabekko_suizokukan.csv"
+    )
+    tabekko_df = tabekko_df.set_index("id")
+
+    dataset = np.load("data/250512a/dataset.npz")
+
+    # 使用可能な動物IDのリスト
+    unique_class_ids = np.unique(dataset["labels"])
+
+    # 学習済みのQUBO行列等を読み込む
+    loaded_result = np.load("data/250512a/result.npz")
+
+    qubo = loaded_result["qubo"]
 
     visualize_image_processor(image_preprocessor)
 
