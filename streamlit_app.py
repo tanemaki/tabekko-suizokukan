@@ -135,7 +135,11 @@ def render_page():
         tabekko_df,
     )
 
-    visualize_image_processor(image_preprocessor)
+    if image_preprocessor.standardized_image is None:
+        st.warning("この画像だとうまく読み取れなかったよ。別の画像を入れてみてね")
+        visualize_image_processor(image_preprocessor)
+
+        st.stop()
 
     estimated_result = estimator.estimate(image_preprocessor.standardized_image)
 
