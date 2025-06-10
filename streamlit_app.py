@@ -135,6 +135,8 @@ def render_page():
         tabekko_df,
     )
 
+    visualize_image_processor(image_preprocessor)
+
     estimated_result = estimator.estimate(image_preprocessor.standardized_image)
 
     columns[1].info(f"これはたぶん「{estimated_result['estimated_class_name']}」だよ！")
