@@ -77,7 +77,7 @@ def visualize_image_processor(image_preprocessor):
 def render_page():
     # Show the page title and description.
     st.set_page_config(page_title="たべっこ水族館", page_icon="🐟", layout="wide")
-    st.title("🐟 たべっこ水族館のキャラ当てアプリ")
+    st.title("🐂 たべっこ水族館のキャラ当てアプリ")
     st.write(
         """
         「難しいことは量子アニーラーにやらせよう」を合言葉に、このアプリは開発されました。
