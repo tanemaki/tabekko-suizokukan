@@ -1,4 +1,9 @@
+import urllib.request
+from pathlib import Path
+
 import cv2
+import matplotlib as mpl
+import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -6,6 +11,24 @@ import streamlit as st
 
 from tabekko.estimator import TabekkoSuizokukanEstimator
 from tabekko.preprocessor import ImagePreProcessor
+
+# 保存先ディレクトリ（プロジェクト内の .fonts フォルダなど）
+font_dir = Path(".fonts")
+font_dir.mkdir(exist_ok=True)
+font_path = font_dir / "NotoSansCJKjp-Regular.otf"
+
+
+# フォントが存在しなければダウンロード
+if not font_path.exists():
+    print("Downloading Noto Sans CJK JP font...")
+    url = "https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf"
+    urllib.request.urlretrieve(url, font_path)
+    print("Font downloaded to:", font_path)
+
+# フォントを読み込んで設定
+jp_font = fm.FontProperties(fname=str(font_path))
+fm.fontManager.addfont(str(font_path))
+mpl.rcParams["font.family"] = jp_font.get_name()
 
 
 def visualize_image_processor(image_preprocessor):
