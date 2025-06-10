@@ -1,12 +1,14 @@
-import streamlit as st
-import numpy as np
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import streamlit as st
 
+from tabekko.estimator import TabekkoSuizokukanEstimator
 from tabekko.preprocessor import ImagePreProcessor
 
-def visualize_image_processor(image_preprocessor):
 
+def visualize_image_processor(image_preprocessor):
     # 画像中の正方形の枠線を認識し、角の4点の座標を読み取る処理を可視化
     image_columns = st.columns(3)
     image_columns[0].image(
@@ -64,7 +66,9 @@ def render_page():
         """
     )
 
-    st.image("./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表", width=600)
+    st.image(
+        "./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表", width=600
+    )
 
     uploaded_file = st.file_uploader(
         "キャラ当ての画像をアップロードしてください", type=["png", "jpg", "jpeg"]
@@ -87,9 +91,7 @@ def render_page():
 
     image_preprocessor = ImagePreProcessor(image, edge_length)
 
-    tabekko_df = pd.read_csv(
-        "data/ginbis_tabekko_suizokukan.csv"
-    )
+    tabekko_df = pd.read_csv("data/ginbis_tabekko_suizokukan.csv")
     tabekko_df = tabekko_df.set_index("id")
 
     dataset = np.load("data/250512a/dataset.npz")
@@ -102,7 +104,34 @@ def render_page():
 
     qubo = loaded_result["qubo"]
 
+    estimator = TabekkoSuizokukanEstimator(
+        qubo,
+        unique_class_ids,
+        loaded_result["nodes_per_class"],
+        edge_length,
+        tabekko_df,
+    )
+
     visualize_image_processor(image_preprocessor)
+    estimated_result = estimator.estimate(image_preprocessor.standardized_image)
+
+    columns[1].info(f"これはたぶん「{estimated_result['estimated_class_name']}」だよ！")
+    result_df = pd.DataFrame(
+        {
+            "名前": estimated_result["sorted_class_names"].values[:5],
+            "確率": estimated_result["sorted_probabilities"][:5],
+        }
+    )
+
+    result_df.set_index("名前", inplace=True)
+    figure, ax = plt.subplots(figsize=(10, 5))
+    result_df.plot(kind="barh", ax=ax)
+    ax.set_title("確率の高い順に上位5つ")
+    ax.set_xlabel("確率")
+    ax.legend().remove()
+    plt.gca().invert_yaxis()
+    columns[1].pyplot(figure)
+
 
 if __name__ == "__main__":
     render_page()
