@@ -10,10 +10,29 @@
       ]
     },
     "vscode": {
-      "settings": {},
+      "settings": {
+          "extensions.verifySignature": false,
+          "[python]": {
+              "editor.defaultFormatter": "charliermarsh.ruff",
+              "editor.codeActionsOnSave": {
+                  "source.fixAll.rull": "explicit",
+                  "source.organizeImports.ruff": "explicit"
+              },
+              "editor.formatOnSave": true
+          },
+          "files.insertFinalNewline": true,
+          "[markdown]": {
+              "editor.formatOnSave": true,
+              "editor.formatOnPaste": true,
+              "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+          }
+      },
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "mhutchie.git-graph",
+        "charliermarsh.ruff",
+        "DavidAnson.vscode-markdownlint"
       ]
     }
   },
