@@ -3,8 +3,8 @@ import pandas as pd
 import streamlit as st
 
 # Show the page title and description.
-st.set_page_config(page_title="Movies dataset", page_icon="🎬")
-st.title("🎬 Movies dataset")
+st.set_page_config(page_title="たべっこ水族館", page_icon="🐟", layout="wide")
+st.title("🐟たべっこ水族館のキャラ当てアプリ")
 st.write(
     """
     This app visualizes data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
