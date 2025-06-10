@@ -1,6 +1,6 @@
-import altair as alt
-import pandas as pd
 import streamlit as st
+import numpy as np
+import cv2
 
 def render_page():
     # Show the page title and description.
@@ -19,6 +19,20 @@ def render_page():
 
     st.image("./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表", width=600)
 
+    uploaded_file = st.file_uploader(
+        "キャラ当ての画像をアップロードしてください", type=["png", "jpg", "jpeg"]
+    )
+
+    if uploaded_file is None:
+        st.warning("画像がアップロードされていません。")
+        st.stop()
+
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+
+    # OpenCVで画像として読み込み（BGR形式）
+    image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+    st.image(image, channels='BGR')
 
 if __name__ == "__main__":
     render_page()
