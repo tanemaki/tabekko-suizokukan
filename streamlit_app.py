@@ -89,9 +89,9 @@ def render_page():
         """
     )
 
-    st.image(
-        "./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表", width=600
-    )
+    columns = st.columns(2)
+    columns[0].image("./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表")
+    columns[1].image("./data/03_05.jpg", caption="置き方の例（正解：あしか）")
 
     uploaded_file = st.file_uploader(
         "キャラ当ての画像をアップロードしてください", type=["png", "jpg", "jpeg"]
