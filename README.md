@@ -4,6 +4,8 @@
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://tabekko-suizokukan.streamlit.app/)
 
+[![Image](https://github.com/user-attachments/assets/f3a582a4-02ec-4962-a915-0f31efeec426)](https://www.youtube.com/watch?v=MQmQh3Pa66I)
+
 ### How to run it on your own machine
 
 1. Install the requirements
