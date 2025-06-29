@@ -6,7 +6,7 @@
 
 ### アプリの解説動画
 
-[![Image](https://github.com/user-attachments/assets/f3a582a4-02ec-4962-a915-0f31efeec426)](https://www.youtube.com/watch?v=MQmQh3Pa66I)
+[![Image](https://github.com/user-attachments/assets/f3a582a4-02ec-4962-a915-0f31efeec426)](https://www.youtube.com/watch?v=c8-w3zsh9W8)
 
 ### 自分のパソコンで動かす方法
 
