@@ -296,6 +296,18 @@ def render_page():
                 st.session_state.sample_paths = np.random.choice(
                     image_paths, size=3, replace=False
                 )
+            
+            reshaffle = st.button(
+                "ほかの仲間を見てみる",
+                icon="🐟️",
+                use_container_width=True,
+                key="reshuffle_sample"
+            )
+
+            if reshaffle:
+                st.session_state.sample_paths = np.random.choice(
+                    image_paths, size=3, replace=False
+                )
 
             sample_paths = st.session_state.sample_paths
             selected_name = {
@@ -307,17 +319,6 @@ def render_page():
             sample_cols = st.columns(3)
             for i, path in enumerate(sample_paths):
                 sample_cols[i].image(path, caption=f"サンプル画像{i+1}")
-
-            if st.button("ほかの仲間を見てみる", icon="🐟️", use_container_width=True, key="reshuffle_sample"):
-                st.session_state.sample_paths = np.random.choice(
-                    image_paths, size=3, replace=False
-                )
-                sample_paths = st.session_state.sample_paths
-                selected_name = {
-                    "サンプル画像1": sample_paths[0],
-                    "サンプル画像2": sample_paths[1],
-                    "サンプル画像3": sample_paths[2],
-                }
 
             select_col, prediction_col = st.columns(2)
             with select_col:
