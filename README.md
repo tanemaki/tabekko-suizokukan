@@ -16,6 +16,11 @@
    pip install -r requirements.txt
    ```
 
+   uvを利用する場合は
+   ```
+   uv sync
+   ```
+
 2. アプリを実行します。
 
    ```
