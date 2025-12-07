@@ -1,5 +1,6 @@
 import urllib.request
 from pathlib import Path
+import glob
 
 import cv2
 import matplotlib as mpl
@@ -74,40 +75,17 @@ def visualize_image_processor(image_preprocessor):
     )
 
 
-def render_page():
-    # Show the page title and description.
-    st.set_page_config(page_title="たべっこ水族館", page_icon="🐟", layout="wide")
-    st.title("🐟 たべっこ水族館のキャラ当てアプリ")
-    st.write(
-        """
-        「難しいことは量子アニーラーにやらせよう」を合言葉に、[QA4U3](https://altema.is.tohoku.ac.jp/QA4U3/)のグループプロジェクトの中でこのアプリは開発されました。
-        このアプリを使うことで、長年人類を悩ませてきた「たべっ子水族館」のキャラ当てが驚くほど簡単に！用意するのは、5cm四方の正方形が描かれた白いコピー用紙と「たべっこ水族館」のビスケットだけ。
-        黒のボールペンで描いた正方形の中にビスケットを置くとアニーラーがキャラを予想してくれます。
-        下の図にあるキャラと近い角度で置くと正答率がぐんと上がることも。是非あなたもお試しあれ。
-        """
-    )
-
-    columns = st.columns(2)
-    columns[0].image("./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表")
-    columns[1].image("./data/03_05.jpg", caption="置き方の例（正解：あしか）")
-
-    uploaded_file = st.file_uploader(
-        "キャラ当ての画像をアップロードしてください", type=["png", "jpg", "jpeg"]
-    )
-
-    if uploaded_file is None:
-        st.warning("画像がアップロードされていません。")
-        st.stop()
-
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-
-    # OpenCVで画像として読み込み（BGR形式）
-    image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
-    # 画像を表示
-    columns = st.columns(2)
-    columns[0].image(image, channels="BGR", caption="アップロードした画像")
-
+def estimate_image(image):
+    """
+    Args:
+        image
+    Returns:
+        estimated_result
+        dataset
+        estimator
+        image_preprocessor
+        tabekko_df
+    """
     edge_length = 28
 
     image_preprocessor = ImagePreProcessor(image, edge_length)
@@ -141,91 +119,7 @@ def render_page():
 
     estimated_result = estimator.estimate(image_preprocessor.standardized_image)
 
-    columns[1].info(f"これはたぶん「{estimated_result['estimated_class_name']}」だよ！")
-    result_df = pd.DataFrame(
-        {
-            "名前": estimated_result["sorted_class_names"].values[:5],
-            "確率": estimated_result["sorted_probabilities"][:5],
-        }
-    )
-
-    result_df.set_index("名前", inplace=True)
-    figure, ax = plt.subplots(figsize=(10, 5))
-    result_df.plot(kind="barh", ax=ax)
-    ax.set_title("確率の高い順に上位5つ")
-    ax.set_xlabel("確率")
-    ax.legend().remove()
-    plt.gca().invert_yaxis()
-    columns[1].pyplot(figure)
-
-    dataset_visualizer = DatasetVisualizer(dataset, tabekko_df)
-
-    top_class_ids = estimated_result["sorted_class_ids"][:5]
-
-    with st.expander("上位ランキングされた動物を覚えるときに使ったデータ"):
-        for selected_class_id in top_class_ids:
-            dataset_visualizer.visualize_three_images(class_id=selected_class_id)
-
-    with st.expander("画像の前処理"):
-        visualize_image_processor(image_preprocessor)
-
-    with st.expander("どう考えたのか見てみる"):
-        visualize_result(estimated_result, estimator)
-
-    with st.expander("モデルの頭の中（QUBO行列）を見てみる"):
-        columns = st.columns(2)
-        qubo = estimator.qubo
-        figure, ax = plt.subplots(figsize=(10, 10))
-        ax.imshow(qubo, cmap="bwr", clim=(-2, 2))
-        columns[0].pyplot(figure)
-
-    with st.expander("覚えた形をみてみよう"):
-        selected_class_id = st.selectbox(
-            "select data",
-            options=tabekko_df.index,
-            format_func=lambda i: f"{i}: {tabekko_df.loc[i]['japanese_name']}",
-        )
-
-        dataset_visualizer.visualize_three_images(class_id=selected_class_id)
-
-
-class DatasetVisualizer:
-    def __init__(self, dataset, tabekko_df):
-        self.dataset = dataset
-        self.images = dataset["images"]
-        self.labels = dataset["labels"]
-        self.unique_class_ids = np.unique(self.labels)
-        self.files = dataset["files"]
-
-        self.tabekko_df = tabekko_df
-
-    def visualize_three_images(self, class_id):
-        figure, axs = plt.subplots(1, 3, figsize=(4, 1))
-
-        indices = np.where(self.labels == class_id)[0]
-        selected_indices = indices[:3]
-
-        selected_images = self.images[selected_indices]
-        selected_labels = self.labels[selected_indices]
-
-        figure, axs = plt.subplots(1, 3, figsize=(12, 2))
-
-        japanese_name = self.tabekko_df.loc[class_id]["japanese_name"]
-
-        ax = axs[0]
-        ax.imshow(selected_images[0], cmap="gray")
-        ax.set_title(f"Class ID: {selected_labels[0]} ({japanese_name})")
-        ax.axis("off")
-        ax = axs[1]
-        ax.imshow(selected_images[1], cmap="gray")
-        ax.set_title(f"Class ID: {selected_labels[1]} ({japanese_name})")
-        ax.axis("off")
-        ax = axs[2]
-        ax.imshow(selected_images[2], cmap="gray")
-        ax.set_title(f"Class ID: {selected_labels[2]} ({japanese_name})")
-        ax.axis("off")
-
-        st.pyplot(figure)
+    return estimated_result, dataset, estimator, image_preprocessor, tabekko_df
 
 
 def visualize_result(estimated_result, estimator):
@@ -270,6 +164,207 @@ def visualize_result(estimated_result, estimator):
     ax.axhline(np.max(probabilities), color="r", linestyle="--")
 
     st.pyplot(figure)
+
+
+class DatasetVisualizer:
+    def __init__(self, dataset, tabekko_df):
+        self.dataset = dataset
+        self.images = dataset["images"]
+        self.labels = dataset["labels"]
+        self.unique_class_ids = np.unique(self.labels)
+        self.files = dataset["files"]
+
+        self.tabekko_df = tabekko_df
+
+    def visualize_three_images(self, class_id):
+        figure, axs = plt.subplots(1, 3, figsize=(4, 1))
+
+        indices = np.where(self.labels == class_id)[0]
+        selected_indices = indices[:3]
+
+        selected_images = self.images[selected_indices]
+        selected_labels = self.labels[selected_indices]
+
+        figure, axs = plt.subplots(1, 3, figsize=(12, 2))
+
+        japanese_name = self.tabekko_df.loc[class_id]["japanese_name"]
+
+        ax = axs[0]
+        ax.imshow(selected_images[0], cmap="gray")
+        ax.set_title(f"Class ID: {selected_labels[0]} ({japanese_name})")
+        ax.axis("off")
+        ax = axs[1]
+        ax.imshow(selected_images[1], cmap="gray")
+        ax.set_title(f"Class ID: {selected_labels[1]} ({japanese_name})")
+        ax.axis("off")
+        ax = axs[2]
+        ax.imshow(selected_images[2], cmap="gray")
+        ax.set_title(f"Class ID: {selected_labels[2]} ({japanese_name})")
+        ax.axis("off")
+
+        st.pyplot(figure)
+
+
+def run_inference_flow(image):
+    """サンプル・アップロード問わず、推論〜可視化をまとめて行う"""
+    if image is None:
+        st.warning("画像が選択されていません。")
+        return
+
+    estimated_result, dataset, estimator, image_preprocessor, tabekko_df = estimate_image(
+        image
+    )
+
+    # 結果表示エリア
+    st.info(f"これはたぶん、「{estimated_result['estimated_class_name']}」だよ！")
+    result_df = pd.DataFrame(
+        {
+            "名前": estimated_result["sorted_class_names"].values[:5],
+            "確率": estimated_result["sorted_probabilities"][:5],
+        }
+    )
+    result_df.set_index("名前", inplace=True)
+    figure, ax = plt.subplots(figsize=(10, 5))
+    result_df.plot(kind="barh", ax=ax)
+    ax.set_title("確率の高い順に上位5つ")
+    ax.set_xlabel("確率")
+    ax.legend().remove()
+    plt.gca().invert_yaxis()
+    st.pyplot(figure)
+
+    dataset_visualizer = DatasetVisualizer(dataset, tabekko_df)
+    top_class_ids = estimated_result["sorted_class_ids"][:5]
+
+    with st.expander("上位ランキングされた動物を覚えるときに使ったデータ"):
+        for selected_class_id in top_class_ids:
+            dataset_visualizer.visualize_three_images(class_id=selected_class_id)
+
+    with st.expander("画像の前処理"):
+        visualize_image_processor(image_preprocessor)
+
+    with st.expander("どう考えたのか見てみる"):
+        visualize_result(estimated_result, estimator)
+
+    with st.expander("モデルの頭の中（QUBO行列）を見てみる"):
+        columns = st.columns(2)
+        qubo = estimator.qubo
+        figure, ax = plt.subplots(figsize=(10, 10))
+        ax.imshow(qubo, cmap="bwr", clim=(-2, 2))
+        columns[0].pyplot(figure)
+
+    with st.expander("覚えた形をみてみよう"):
+        selected_class_id = st.selectbox(
+            "select data",
+            options=tabekko_df.index,
+            format_func=lambda i: f"{i}: {tabekko_df.loc[i]['japanese_name']}",
+        )
+        dataset_visualizer.visualize_three_images(class_id=selected_class_id)
+
+
+def render_page():
+    # Show the page title and description.
+    st.set_page_config(page_title="たべっこ水族館", page_icon="🐟", layout="wide")
+    st.title("🐟 たべっこ水族館のキャラ当てアプリ")
+    st.write(
+        """
+        「難しいことは量子アニーラーにやらせよう」を合言葉に、[QA4U3](https://altema.is.tohoku.ac.jp/QA4U3/)のグループプロジェクトの中でこのアプリは開発されました。
+        このアプリを使うことで、長年人類を悩ませてきた「たべっ子水族館」のキャラ当てが驚くほど簡単に！用意するのは、5cm四方の正方形が描かれた白いコピー用紙と「たべっこ水族館」のビスケットだけ。
+        黒のボールペンで描いた正方形の中にビスケットを置くとアニーラーがキャラを予想してくれます。
+        下の図にあるキャラと近い角度で置くと正答率がぐんと上がることも。是非あなたもお試しあれ。
+        """
+    )
+
+    columns = st.columns(2)
+    columns[0].image("./data/tabekko_table.jpg", caption="たべっこ水族館のキャラ一覧表")
+    columns[1].image("./data/03_05.jpg", caption="置き方の例（正解：あしか）")
+
+    image_paths = glob.glob("fig/*.jpg")
+
+    # ★ タブ分け：サンプル画像 / アップロード画像
+    tab_sample, tab_upload = st.tabs(["🖼 サンプル画像で試す", "📤 画像をアップロード"])
+
+    all_name = pd.read_csv("data/ginbis_tabekko_suizokukan.csv").set_index("id")["japanese_name"].to_dict()
+
+    # ---- サンプル画像タブ ----
+    with tab_sample:
+        sample_image = None
+
+        if len(image_paths) > 3:
+            st.subheader("🖼 サンプル画像で試してみよう！")
+
+            if "sample_paths" not in st.session_state:
+                st.session_state.sample_paths = np.random.choice(
+                    image_paths, size=3, replace=False
+                )
+            
+            reshaffle = st.button(
+                "ほかの仲間を見てみる",
+                icon="🐟️",
+                use_container_width=True,
+                key="reshuffle_sample"
+            )
+
+            if reshaffle:
+                st.session_state.sample_paths = np.random.choice(
+                    image_paths, size=3, replace=False
+                )
+
+            sample_paths = st.session_state.sample_paths
+            selected_name = {
+                "サンプル画像1": sample_paths[0],
+                "サンプル画像2": sample_paths[1],
+                "サンプル画像3": sample_paths[2],
+            }
+
+            sample_cols = st.columns(3)
+            for i, path in enumerate(sample_paths):
+                sample_cols[i].image(path, caption=f"サンプル画像{i+1}")
+
+            select_col, prediction_col = st.columns(2)
+            with select_col:
+                selected_sample = st.selectbox(
+                    "サンプル画像を選ぶ",
+                    list(selected_name.keys()),
+                    key="sample_selectbox",
+                )
+                if selected_sample in selected_name:
+                    sample_image = cv2.imread(selected_name[selected_sample])
+                    st.image(sample_image, channels="BGR", caption="選択したサンプル画像")
+
+            with prediction_col:
+                predicted_name = st.selectbox(
+                    "誰だと思う？",
+                    list(all_name.values()),
+                    key="sample_prediction_selectbox",
+                )
+                st.write(f"あなたの予想： {predicted_name}")
+
+            # 推論ボタン（サンプルタブ）
+            if st.button("きみはだれかな？", icon="🐟️", use_container_width=True, key="run_sample"):
+                run_inference_flow(sample_image)
+
+        else:
+            st.info("サンプル画像が用意されていません。")
+
+    # ---- アップロードタブ ----
+    with tab_upload:
+        st.subheader("📤 画像をアップロードして試す")
+
+        uploaded_image = None
+        uploaded_file = st.file_uploader(
+            "キャラ当ての画像をアップロードしてください", type=["png", "jpg", "jpeg"], key="uploader"
+        )
+
+        if uploaded_file is not None:
+            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+            uploaded_image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+            st.image(uploaded_image, channels="BGR", caption="アップロードした画像")
+
+        if st.button("きみはだれかな？", icon="🐟️", use_container_width=True, key="run_upload"):
+            if uploaded_image is None:
+                st.warning("画像がアップロードされていません。")
+            else:
+                run_inference_flow(uploaded_image)
 
 
 def get_class_index(class_id, unique_class_ids):
